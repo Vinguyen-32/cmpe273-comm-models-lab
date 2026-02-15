@@ -1,0 +1,72 @@
+services:
+  # ── RabbitMQ broker ──────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    volumes:
+      - ./broker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Order Service (REST API) ─────────────────────────────────
+  order_service:
+    build:
+      context: ./order_service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Order Callback Listener ─────────────────────────────────
+  order_callback:
+    build:
+      context: ./order_service
+      dockerfile: Dockerfile.callback
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      ORDER_SERVICE_URL: http://order_service:5001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      order_service:
+        condition: service_started
+
+  # ── Inventory Service (Consumer) ────────────────────────────
+  inventory_service:
+    build:
+      context: ./inventory_service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Notification Service (Consumer) ─────────────────────────
+  notification_service:
+    build:
+      context: ./notification_service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

@@ -1,0 +1,71 @@
+{
+    "queues": [
+        {
+            "name": "order_placed",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "order_placed_dlq"
+            }
+        },
+        {
+            "name": "order_placed_dlq",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        },
+        {
+            "name": "inventory_reserved",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        },
+        {
+            "name": "inventory_failed",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        }
+    ],
+    "exchanges": [
+        {
+            "name": "orders_exchange",
+            "vhost": "/",
+            "type": "topic",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        }
+    ],
+    "bindings": [
+        {
+            "source": "orders_exchange",
+            "vhost": "/",
+            "destination": "order_placed",
+            "destination_type": "queue",
+            "routing_key": "order.placed",
+            "arguments": {}
+        },
+        {
+            "source": "orders_exchange",
+            "vhost": "/",
+            "destination": "inventory_reserved",
+            "destination_type": "queue",
+            "routing_key": "inventory.reserved",
+            "arguments": {}
+        },
+        {
+            "source": "orders_exchange",
+            "vhost": "/",
+            "destination": "inventory_failed",
+            "destination_type": "queue",
+            "routing_key": "inventory.failed",
+            "arguments": {}
+        }
+    ]
+}
