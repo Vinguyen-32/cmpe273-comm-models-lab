@@ -1,0 +1,32 @@
+services:
+  order-service:
+    build: ./order_service
+    ports:
+      - "8080:8080"
+    environment:
+      INVENTORY_URL: http://inventory-service:8081
+      NOTIFICATION_URL: http://notification-service:8082
+      INVENTORY_TIMEOUT_MS: "3000"
+    depends_on:
+      - inventory-service
+      - notification-service
+    networks:
+      - app
+
+  inventory-service:
+    build: ./inventory_service
+    ports:
+      - "8081:8081"
+    networks:
+      - app
+
+  notification-service:
+    build: ./notification_service
+    ports:
+      - "8082:8082"
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge

@@ -3,8 +3,8 @@ Shared ID generation utility used across all services.
 Generates short, human-readable unique order IDs.
 """
 
-import uuid
 import time
+import uuid
 
 
 def generate_order_id() -> str:

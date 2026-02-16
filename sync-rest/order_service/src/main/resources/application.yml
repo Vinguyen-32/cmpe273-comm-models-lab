@@ -1,0 +1,9 @@
+server:
+  port: 8080
+
+inventory:
+  url: ${INVENTORY_URL:http://localhost:8081}
+  timeoutMs: ${INVENTORY_TIMEOUT_MS:1000}
+
+notification:
+  url: ${NOTIFICATION_URL:http://localhost:8082}
