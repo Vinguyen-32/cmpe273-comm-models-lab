@@ -1,5 +1,17 @@
 # Maven
 **/target/
+**/dependency-reduced-pom.xml
+
+# Gradle
+**/build/
+**/.gradle/
+
+# Java
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/hs_err_pid*
 
 # IDE
 **/.idea/
@@ -7,10 +19,21 @@
 **/.classpath
 **/.project
 **/.settings/
+**/.vscode/
+**/.history/
+**/.metadata/
 
 # OS
 .DS_Store
 
-# Logs
+# Logs and reports
 **/*.log
+**/surefire-reports/
+**/failsafe-reports/
+
+# Local env
+**/.env
+**/.env.*
+
+# Archives
 *.tar.gz

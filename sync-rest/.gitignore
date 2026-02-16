@@ -1,0 +1,15 @@
+# Service build outputs
+/order_service/target/
+/inventory_service/target/
+/notification_service/target/
+/tests/target/
+
+# Local env
+.env
+.env.*
+
+# Overrides
+/docker-compose.override.yml
+
+# Logs
+*.log
