@@ -1,38 +1,134 @@
-# cmpe273-comm-models-
+# CMPE 273 - Communication Models Lab
+
+This lab implements the same **campus food ordering** workflow using three different communication models:
+- **Part A**: Synchronous REST
+- **Part B**: Async Messaging with RabbitMQ
+- **Part C**: Streaming with Kafka
+
+## Repository Structure
+
+```
+cmpe273-comm-models-lab/
+├── common/                  # Shared utilities
+│   ├── README.md
+│   └── ids.py
+├── sync-rest/               # Part A: Synchronous REST
+│   ├── docker-compose.yml
+│   ├── order_service/
+│   ├── inventory_service/
+│   ├── notification_service/
+│   └── tests/
+├── async-rabbitmq/          # Part B: Async RabbitMQ (TBD)
+└── streaming-kafka/         # Part C: Kafka Streaming (TBD)
+```
 
 ---
 
-# Part A Results
+# Part A: Synchronous REST
 
-## Latency Analysis
+## Architecture
 
-| Scenario | Avg Latency (ms) | P95 Latency (ms) | Success Rate |
-|----------|------------------|-----------------|--------------|
-| Baseline (no delay) | 11.95 | 19 | 100% |
-| Inventory delay 2s | 2085.8 | 2301 | 100% |
-| Inventory failure | HTTP 502 | - | 0% |
+```
+Client → OrderService → InventoryService → NotificationService
+              ↓               ↓                    ↓
+         POST /order    POST /reserve        POST /send
+         (blocking)      (blocking)          (blocking)
+```
 
-## Explanation
+OrderService makes **synchronous blocking calls** to Inventory and Notification services sequentially.
 
-### Why sync calls add latency
+## Services
 
-In synchronous REST, OrderService **blocks** on the HTTP call to Inventory. The client waits for the complete chain:
-1. OrderService → Inventory (2000ms delay)
-2. Wait for Inventory response
-3. OrderService → Notification
-4. Return to client
+| Service | Port | Endpoints |
+|---------|------|-----------|
+| OrderService | 8080 | POST /order |
+| InventoryService | 8081 | POST /reserve, POST /inject |
+| NotificationService | 8082 | POST /send |
 
-**Result**: The 2000ms delay in Inventory propagates directly to the client, adding ~2000ms to the Order response time.
+## Build and Run
 
-### Why failures propagate
+```bash
+cd sync-rest
+docker compose up --build
+```
 
-When Inventory fails:
-- OrderService receives a 500/timeout error
-- OrderService catches the exception and returns HTTP 502 (Bad Gateway) to client
-- Notification is **not called** (the chain stops)
+## Run Tests
 
-This is **blocking failure propagation**—synchronous calls fail fast and synchronously.
+```bash
+cd sync-rest/tests
+mvn clean test
+```
 
-### Key observation
+---
 
-Synchronous REST is simple but tightly couples services. Any delay or failure in a dependency directly impacts upstream services and clients. This is why async/streaming models are often preferred in microservices.
+## Part A Results
+
+### Test 1: Baseline Latency (N=20 requests)
+
+| Metric | Value | Unit |
+|--------|-------|------|
+| N (requests) | 20 | requests |
+| Success rate | 100% | - |
+| Avg latency | 11.95 | ms |
+| p95 | 19 | ms |
+
+**Reasoning**: Baseline latency is low (~12ms) because:
+- Network overhead is minimal (Docker internal network)
+- Inventory and Notification services respond immediately (no processing delay)
+- Sequential processing: Order → Inventory → Notification → Response
+
+### Test 2: Impact of 2-Second Inventory Delay
+
+| Metric | Baseline | With 2s Delay | Increase |
+|--------|----------|---------------|----------|
+| Avg latency | 11.95ms | 2085.8ms | +2073ms |
+| p95 | 19ms | 2301ms | +2282ms |
+
+**Reasoning**: Latency increases by ~2000ms because:
+- OrderService uses **synchronous blocking calls**
+- OrderService waits for Inventory to complete before proceeding to Notification
+- Total latency = Inventory delay (2000ms) + Notification (~5ms) + overhead
+- **This demonstrates the tight coupling of synchronous architecture**
+
+### Test 3: Inventory Failure Handling
+
+| Request | Expected | Actual | Verdict |
+|---------|----------|--------|---------|
+| 1 | HTTP 502, error message, no hang | HTTP 502 | ✅ Pass |
+| 2 | HTTP 502, error message, no hang | HTTP 502 | ✅ Pass |
+| 3 | HTTP 502, error message, no hang | HTTP 502 | ✅ Pass |
+
+**Error Response Example:**
+```json
+{
+  "orderId": "uuid",
+  "status": "FAILED",
+  "message": "Inventory error"
+}
+```
+
+**Reasoning**: OrderService handles failures correctly because:
+- Exception handling catches downstream errors and maps to HTTP 502 (Bad Gateway)
+- Error response includes clear status and message
+- Service remains available even when Inventory fails
+- Notification is **not called** when Inventory fails (chain stops)
+
+---
+
+## Key Findings
+
+| Finding | Observation |
+|---------|-------------|
+| Baseline latency | Low (~12ms) for simple synchronous REST calls |
+| Delay propagation | Downstream delays directly impact end-to-end latency (+2000ms delay = +2073ms latency) |
+| Failure handling | Returns HTTP 502, doesn't hang, provides error reason |
+| Coupling | **Tight coupling** - any downstream issue affects the entire request |
+
+## Conclusion
+
+Synchronous REST is simple to implement but creates **tight coupling** between services:
+- Delays in any downstream service propagate to the client
+- Failures cascade upstream immediately
+- Client must wait for the entire chain to complete
+
+This is why **async messaging** (Part B) and **streaming** (Part C) patterns are preferred for microservices that need resilience and scalability.
