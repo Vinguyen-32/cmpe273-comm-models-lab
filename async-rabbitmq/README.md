@@ -61,6 +61,43 @@ docker compose ps
 # Check RabbitMQ management UI
 open http://localhost:15672   # guest / guest
 ```
+### Outputs
+
+<img width="700" height="158" alt="image" src="https://github.com/user-attachments/assets/3b8f02ef-4cff-450b-be9a-4b88927c0556" />
+
+<img width="715" height="172" alt="image" src="https://github.com/user-attachments/assets/d7664005-8cd0-474f-b4f6-d4101c202853" />
+
+<img width="796" height="132" alt="image" src="https://github.com/user-attachments/assets/c01ddb0e-e123-4457-9022-eace66ecb897" />
+
+### Tests outputs
+<img width="712" height="228" alt="image" src="https://github.com/user-attachments/assets/2aab7008-21b3-4d93-8953-dc188c90903a" />
+<img width="733" height="423" alt="image" src="https://github.com/user-attachments/assets/32bed67f-f3e8-4fcd-ae3c-34f6c055641e" />
+
+### Manual Failure Injection (Backlog Drain)
+```bash
+# Stop inventory consumer
+docker compose stop inventory_service
+
+# Place 10 orders while it's down
+for i in $(seq 1 10); do
+  curl -s -X POST http://localhost:5001/order \
+    -H "Content-Type: application/json" \
+    -d "{\"item\":\"Coffee\",\"qty\":1,\"student_id\":\"BACKLOG-$i\"}"
+  echo ""
+done
+```
+<img width="944" height="320" alt="image" src="https://github.com/user-attachments/assets/d0790a44-3da4-47e1-9d3c-ce082819db52" />
+<img width="873" height="315" alt="image" src="https://github.com/user-attachments/assets/d8bb5f8a-056e-4aa6-9dc0-805c13e82a06" />
+
+# Check RabbitMQ UI → order_placed queue shows 10 ready messages
+# Or via CLI:
+# The orders are queued, OrderService returned 201 for all of them
+
+# Restart inventory
+docker compose start inventory_service
+
+# Watch all 10 drain instantly
+docker compose logs -f inventory_service
 
 ### Service Ports
 
