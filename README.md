@@ -233,4 +233,13 @@ python test_streaming.py  # edit throttle_ms=50 inside the file
 # Change event count
 # edit COUNT = 10_000 at the top of test_produce_10k()
 ```
+## Test Output Screenshots
+![IMG-20260218-WA0004-1](https://github.com/user-attachments/assets/c006acd2-d283-41ff-8fd0-cd52bcda3eb6)
+![IMG-20260218-WA0009-2](https://github.com/user-attachments/assets/dc6f5670-5008-45fd-99d3-620d7e822fee)
+![IMG-20260218-WA0008-3](https://github.com/user-attachments/assets/3cfe7a5e-5ed8-4715-86f0-25ae9887042e)
+![IMG-20260218-WA0007-4](https://github.com/user-attachments/assets/4bd002d2-6d06-47ec-aaf5-7ae630c87c98)
+![IMG-20260218-WA0006-5](https://github.com/user-attachments/assets/815e34ee-c222-45e5-8024-070b65c86521)
+
+
+
 
